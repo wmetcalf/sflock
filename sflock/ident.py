@@ -18,7 +18,6 @@ mimes = {
     "application/java-archive": "jar",
     "application/x-dosexec": "exe",
     "application/vnd.ms-cab-compressed": "cab",
-
 }
 
 magics = {
@@ -33,6 +32,7 @@ magics = {
     "Rich Text Format": "doc",
     "Microsoft Office Word": "doc",
     "Microsoft Word": "doc",
+    "PowerISO Direct-Access-Archive": "daa",
             
 }
 
