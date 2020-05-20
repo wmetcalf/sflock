@@ -170,6 +170,10 @@ def android(f):
         return
     return "apk"
 
+def dmg(f):
+    if any([child.magic == 'AppleDouble encoded Macintosh file' for child in f.children or []]):
+        return "dmg"
+
 def identify(f):
     if not f.stream.read(0x1000):
         return
@@ -180,6 +184,6 @@ def identify(f):
             return package
 
 identifiers = [
-    office_zip, office_ole, office_webarchive, office_activemime,
+    dmg, office_zip, office_ole, office_webarchive, office_activemime,
     hta, powershell, javascript, visualbasic, android, java, wsf,
 ]
