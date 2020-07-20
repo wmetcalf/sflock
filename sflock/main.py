@@ -14,8 +14,6 @@ import zipfile
 
 from sflock.abstracts import File, Unpacker
 from sflock.exception import IncorrectUsageException
-#from sflock.ident import identify
-from sflock.identify import identify
 from sflock.misc import make_list
 from sflock.unpack import plugins
 
@@ -32,18 +30,6 @@ def supported():
 
 def ident(f):
     """Identifies a file based on its contents."""
-    # I think this is for handling archives
-    #package = identify(f)
-    #if package:
-    #    f.preview = False
-    #    f.package = package
-
-        # Deselect the direct children.
-    #    for child in f.children:
-    #        child.selected = False
-    #    return
-
-    # Recursively enumerate further.
     for child in f.children:
         ident(child)
 

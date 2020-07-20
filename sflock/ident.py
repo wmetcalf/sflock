@@ -81,13 +81,6 @@ def office_zip(f):
 
     return packages.get(application.group(1))
 
-def office_ole(f):
-    files = f.ole and f.ole.listdir() or []
-    if ["WordDocument"] in files:
-        return "doc"
-    if ["Workbook"] in files:
-        return "xls"
-
 def powershell(f):
     POWERSHELL_STRS = [
         b"$PSHOME", b"Get-WmiObject", b"Write-", b"new-object",

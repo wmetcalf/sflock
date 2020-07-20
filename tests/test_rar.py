@@ -94,6 +94,7 @@ class TestRarFile:
         assert t.unpacker == "rarfile"
         assert t.filename == "foo"
 
+    # Does not produce this error
     @pytest.mark.skip()
     def test_symlink(self):
         t = unpack("tests/files/symlink.rar")
@@ -112,6 +113,7 @@ class TestRarFile:
         t = RarFile(f("garbage.bin"))
         assert t.handles() is False
         assert not t.f.selected
+        assert t.f.identified
         assert not t.unpack()
         assert t.f.mode == "failed"
 

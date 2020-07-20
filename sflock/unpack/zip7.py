@@ -4,18 +4,16 @@
 # See the file 'docs/LICENSE.txt' for copying permission.
 
 import os
-import subprocess
 import tempfile
 
 from sflock.abstracts import Unpacker
-from sflock.exception import UnpackException
 
 class Zip7File(Unpacker):
     name = "7zfile"
     exe = "/usr/bin/7z"
     exts = ".7z", ".iso", ".zip"
     # TODO Should we use "isoparser" (check PyPI) instead of 7z?
-    magic = "7-zip archive", "ISO 9660"
+    magic = "7-zip archive", "ISO 9660", "CDFV2 Encrypted"
     priority = 1
 
     def handles(self):

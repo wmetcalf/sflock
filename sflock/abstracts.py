@@ -68,6 +68,9 @@ class Unpacker(object):
         zipjail = data_file("zipjail.elf")
         arg = "--clone=1" if self.name == "7zfile" else "--clone=0"
 
+        if os.path.exists(dirpath):
+            shutil.rmtree(dirpath)
+
         p = subprocess.Popen(
             (zipjail, filepath, dirpath, arg, "--", self.exe) + args,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -126,6 +129,8 @@ class Unpacker(object):
 
         ret = []
         for f in entries:
+            if f.filename and f.filename.strip() == "":
+                continue
             for unpacker in Unpacker.guess(f):
                 plugin = self.plugins[unpacker](f)
                 if plugin.supported():
@@ -227,7 +232,7 @@ class File(object):
 
     def __init__(self, filepath=None, contents=None, relapath=None,
                  filename=None, mode=None, password=None, description=None,
-                 selected=None, stream=None, platforms=None):
+                 selected=False, stream=None, platforms=()):
 
         self.filepath = filepath
         self.relapath = relapath
@@ -239,8 +244,8 @@ class File(object):
         self.duplicate = False
         self.unpacker = None
         self.parent = None
-        self.preview = True
         self.archive = False
+        self.identified = True
         # Extract the filename from any of the available path components.
         self.filename = ntpath.basename(
             filename or self.relapath or self.filepath or ""
@@ -248,10 +253,11 @@ class File(object):
         self._contents = contents
         self._platforms = platforms
         self._selected = selected
-        self._human_type = None
-        self._extension = None
-        self._dependency_version = None
-        self._dependency = None
+        self._identified_ran = False
+        self._human_type = ""
+        self._extension = ""
+        self._dependency_version = ""
+        self._dependency = ""
         self._md5 = None
         self._sha1 = None
         self._sha256 = None
@@ -292,17 +298,21 @@ class File(object):
         self._stream.seek(0)
         return self._stream
 
-    def __identify(self):
+    def _identify(self):
+        if self._identified_ran:
+            return
+        self._identified_ran = True
         data = identify(self)
         if data:
             self._selected = data[0]
             self._human_type = data[1]
             self._extension = data[2]
             self._platforms = data[3]
-            self._dependency = data[4][0]
-            self._dependency_version = data[4][1]
+            self._dependency = data[4]
+            self._dependency_version = ""
+            self.identified = True
 
-    def __hashes(self):
+    def _hashes(self):
         sha256, s, buf = hashlib.sha256(), self.stream, True
         sha1 = hashlib.sha1()
         md5 = hashlib.md5()
@@ -319,19 +329,19 @@ class File(object):
     @property
     def md5(self):
         if not self._md5:
-            self.__hashes()
+            self._hashes()
         return self._md5
 
     @property
     def sha1(self):
         if not self._sha1:
-            self.__hashes()
+            self._hashes()
         return self._sha1
 
     @property
     def sha256(self):
         if not self._sha256:
-            self.__hashes()
+            self._hashes()
         return self._sha256
 
     @property
@@ -390,38 +400,38 @@ class File(object):
     
     @property
     def dependency(self):
-        if self._dependency is None:
-            self.__identify()
+        if not self._identified_ran:
+            self._identify()
         return self._dependency
 
     @property
     def dependency_version(self):
-        if self._dependency_version is None:
-            self.__identify()
+        if not self._identified_ran:
+            self._identify()
         return self._dependency_version
 
     @property
     def extension(self):
-        if self._extension is None:
-            self.__identify()
+        if not self._identified_ran:
+            self._identify()
         return self._extension
 
     @property
     def human_type(self):
-        if self._human_type is None:
-            self.__identify()
+        if not self._identified_ran:
+            self._identify()
         return self._human_type
 
     @property
     def platforms(self):
-        if self._platforms is None:
-            self.__identify()
+        if not self._identified_ran:
+            self._identify()
         return self._platforms
 
     @property
     def selected(self):
-        if self._selected is None:
-            self.__identify()
+        if not self._identified_ran:
+            self._identify()
         return self._selected
 
     @property
@@ -484,11 +494,11 @@ class File(object):
             "sha256": self.sha256,
             "md5": self.md5,
             "sha1": self.sha1,
+            "identified": self.identified,
             "platforms": self.platforms,
             "selected": self.selected,
             "dependency": self._dependency,
             "dependency_version": self._dependency_version,
-            "preview": self.preview,
             "error": self.error,
         }
 
@@ -505,11 +515,11 @@ class File(object):
             "relaname": self.relaname,
             "extrpath": self.extrpath,
             "size": self.filesize,
+            "identified": self.identified,
             "platforms": self.platforms,
             "selected": self.selected,
             "type": "container" if self.children else "file",
             "children": [],
-            "preview": self.preview,
             "error": self.error,
         }
 
@@ -532,8 +542,7 @@ class File(object):
             entry.append({
                 "type": "directory",
                 "filename": name,
-                "children": [],
-                "preview": True,
+                "children": []
             })
             return entry[-1]
         for child in self.children:

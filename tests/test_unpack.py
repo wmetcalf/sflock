@@ -7,8 +7,16 @@ import io
 import os.path
 import tempfile
 import zipfile
+import pytest
 
 from sflock.main import unpack, supported
+from sflock.exception import MaxNestedError
+from sflock.abstracts import File
+from sflock.unpack.zip7 import Zip7File
+
+def test_unpack_nested_max():
+    with pytest.raises(MaxNestedError):
+        unpack("tests/files/edge/data11.zip")
 
 def test_unpack1():
     f = unpack("tests/files/tar_plain.tar")
@@ -43,23 +51,24 @@ def test_astree1():
         "filename": "zip_nested2.zip",
         "relapath": None,
         "relaname": None,
+        "identified": True,
         "filepath": "tests/files/zip_nested2.zip",
         "extrpath": [],
         "size": 496,
-        "package": None,
-        "platform": None,
+        "extension": "zip",
+        "platforms": ("windows", "darwin", "linux", "android", "ios"),
+        "dependency": "unarchive",
+        "dependency_version": "",
+        "human_type": "ZIP file",
         "selected": False,
-        "preview": True,
         "error": None,
         "type": "container",
         "children": [{
             "type": "directory",
             "filename": "deepfoo",
-            "preview": True,
             "children": [{
                 "type": "directory",
                 "filename": "foo",
-                "preview": True,
                 "children": [{
                     "filename": "bar.txt",
                     "relapath": "deepfoo/foo/bar.txt",
@@ -70,11 +79,14 @@ def test_astree1():
                     ],
                     "duplicate": False,
                     "password": None,
+                    "identified": True,
                     "size": 12,
-                    "package": None,
-                    "platform": None,
+                    "extension": "txt",
+                    "platforms": ("windows", "darwin", "linux", "android", "ios"),
+                    "dependency": "",
+                    "dependency_version": "",
+                    "human_type": "Text",
                     "selected": False,
-                    "preview": True,
                     "error": None,
                     "type": "file",
                     "children": [],
@@ -94,17 +106,20 @@ def test_astree2():
         "filepath": "tests/files/eml_tar_nested2.eml",
         "extrpath": [],
         "size": 15035,
-        "password": None,
-        "package": None,
-        "platform": None,
+        "identified": True,
+        "extension": "email",
+        "platforms": ("windows",),
+        "dependency": "",
+        "dependency_version": "",
+        "human_type": "Email file",
         "selected": False,
-        "preview": True,
         "error": None,
         "type": "container",
         "children": [{
             "type": "container",
             "password": None,
             "duplicate": False,
+            "identified": True,
             "filename": "tar_nested2.tar",
             "relapath": "tar_nested2.tar",
             "relaname": "tar_nested2.tar",
@@ -112,30 +127,33 @@ def test_astree2():
             "extrpath": [
                 "tar_nested2.tar",
             ],
-            "package": None,
-            "platform": None,
+            "extension": "tar",
+            "platforms": ("linux",),
+            "dependency": "",
+            "dependency_version": "",
+            "human_type": "Consolidated Unix File Archive",
             "selected": False,
-            "preview": True,
             "error": None,
             "size": 10240,
             "children": [{
                 "type": "directory",
                 "filename": "deepfoo",
-                "preview": True,
                 "children": [{
                     "type": "directory",
                     "filename": "foo",
-                    "preview": True,
                     "children": [{
                         "type": "file",
                         "size": 12,
                         "children": [],
                         "password": None,
                         "duplicate": False,
-                        "package": None,
-                        "platform": None,
+                        "identified": True,
+                        "extension": "txt",
+                        "platforms": ("windows", "darwin", "linux", "android", "ios"),
+                        "dependency": "",
+                        "dependency_version": "",
+                        "human_type": "Text",
                         "selected": False,
-                        "preview": True,
                         "error": None,
                         "filename": "bar.txt",
                         "relapath": "deepfoo/foo/bar.txt",
@@ -154,70 +172,82 @@ def test_astree2():
 def test_astree3():
     f = unpack("tests/files/eml_nested_eml.eml")
     assert f.astree(finger=False) == {
+        "extension": "mht",
+        "platforms": ("windows", "darwin", "linux", "android", "ios"),
+        "dependency": "",
+        "dependency_version": "",
+        "human_type": "Mht file",
         "duplicate": False,
         "filename": "eml_nested_eml.eml",
         "relapath": None,
         "relaname": None,
         "filepath": "tests/files/eml_nested_eml.eml",
         "extrpath": [],
-        "package": None,
-        "platform": None,
-        "selected": False,
-        "preview": True,
+        "selected": True,
         "password": None,
+        "identified": True,
         "size": 24607,
         "error": None,
         "type": "container",
         "children": [{
+            "extension": "mht",
+            "platforms": ("windows", "darwin", "linux", "android", "ios"),
+            "dependency": "",
+            "dependency_version": "",
+            "human_type": "Mht file",
             "duplicate": False,
             "filename": "multipart.eml",
             "relapath": "multipart.eml",
             "relaname": "multipart.eml",
+            "identified": True,
             "filepath": None,
             "extrpath": [
                 "multipart.eml",
             ],
-            "package": None,
-            "platform": None,
-            "selected": False,
-            "preview": True,
+            "selected": True,
             "password": None,
             "size": 17482,
             "error": None,
             "type": "container",
             "children": [{
+                "extension": "txt",
+                "platforms": ("windows", "darwin", "linux", "android", "ios"),
+                "dependency": "",
+                "dependency_version": "",
+                "human_type": "Text",
                 "duplicate": False,
                 "filename": u"\u60e1\u610f\u8edf\u9ad4.doc",
                 "relapath": u"\u60e1\u610f\u8edf\u9ad4.doc",
                 "relaname": u"\u60e1\u610f\u8edf\u9ad4.doc",
+                "identified": True,
                 "filepath": None,
                 "extrpath": [
                     "multipart.eml",
                     u"\u60e1\u610f\u8edf\u9ad4.doc",
                 ],
-                "package": "doc",
-                "platform": "windows",
-                "selected": True,
-                "preview": True,
+                "selected": False,
                 "password": None,
                 "size": 12,
                 "error": None,
                 "type": "file",
                 "children": [],
             }, {
+                "extension": "png",
+                "platforms": ("windows", "darwin", "linux", "android", "ios"),
+                "dependency": "",
+                "dependency_version": "",
+                "human_type": "Portable Network Graphic",
                 "duplicate": False,
                 "filename": "cuckoo.png",
                 "relapath": "cuckoo.png",
+                "identified": True,
                 "relaname": "cuckoo.png",
                 "filepath": None,
                 "extrpath": [
                     "multipart.eml",
                     "cuckoo.png",
                 ],
-                "package": None,
-                "platform": None,
                 "selected": False,
-                "preview": True,
                 "password": None,
                 "size": 11970,
                 "error": None,
@@ -229,14 +259,17 @@ def test_astree3():
             "filename": "att1",
             "relapath": "att1",
             "relaname": "att1",
+            "identified": True,
             "filepath": None,
             "extrpath": [
                 "att1",
             ],
-            "package": None,
-            "platform": None,
+            "extension": "txt",
+            "platforms": ("windows", "darwin", "linux", "android", "ios"),
+            "dependency": "",
+            "dependency_version": "",
+            "human_type": "Text",
             "selected": False,
-            "preview": True,
             "password": None,
             "size": 12,
             "error": None,
@@ -252,17 +285,22 @@ def test_astree4():
         "relapath": None,
         "relaname": None,
         "filepath": "tests/files/msg_invoice.msg",
+        "human_type": "CDF file",
+        "extension": "cdf",
         "extrpath": [],
         "size": 270848,
+        "identified": True,
         "duplicate": False,
-        "package": None,
-        "platform": None,
+        "platforms": ("windows", "darwin", "linux", "android", "ios"),
         "selected": False,
-        "preview": True,
         "password": None,
         "error": None,
+        "dependency": "microsoft_word",
+        "dependency_version": "",
         "type": "container",
         "children": [{
+            "dependency": "unarchive",
+            "dependency_version": "",
             "duplicate": False,
             "filename": "image003.emz",
             "relapath": "image003.emz",
@@ -271,28 +309,32 @@ def test_astree4():
             "extrpath": [
                 "image003.emz",
             ],
-            "package": None,
-            "platform": None,
+            "extension": "gz",
+            "human_type": "Compression file",
+            "platforms": ("linux",),
             "selected": False,
-            "preview": True,
             "password": None,
+            "identified": True,
             "size": 1137,
             "error": None,
             "type": "file",
             "children": [],
         }, {
             "duplicate": False,
+            "dependency": "",
+            "dependency_version": "",
+            "extension": "png",
+            "human_type": "Portable Network Graphic",
             "filename": "image004.png",
             "relapath": "image004.png",
             "relaname": "image004.png",
             "filepath": None,
+            "identified": True,
             "extrpath": [
                 "image004.png",
             ],
-            "package": None,
-            "platform": None,
+            "platforms": ("windows", "darwin", "linux", "android", "ios"),
             "selected": False,
-            "preview": True,
             "password": None,
             "size": 1132,
             "error": None,
@@ -300,35 +342,42 @@ def test_astree4():
             "children": [],
         }, {
             "duplicate": False,
+            "human_type": "",
+            "extension": "",
             "filename": "oledata.mso",
             "relapath": "oledata.mso",
             "relaname": "oledata.mso",
             "filepath": None,
+            "identified": True,
             "extrpath": [
                 "oledata.mso",
             ],
-            "package": "doc",
-            "platform": "windows",
-            "selected": True,
-            "preview": True,
+            "platforms": (),
+            "dependency": "",
+            "dependency_version": "",
+            "selected": False,
             "password": None,
             "size": 234898,
             "error": None,
             "type": "container",
             "children": [{
+                "dependency": "",
+                "dependency_version": "",
+                "extension": "exe",
                 "duplicate": False,
                 "filename": "Firefox Setup Stub 43.0.1.exe",
                 "relapath": "Firefox Setup Stub 43.0.1.exe",
                 "relaname": "Firefox Setup Stub 43.0.1.exe",
                 "filepath": None,
+                "identified": True,
+                "human_type": "Exe file",
+                "platforms": ('windows'),
                 "extrpath": [
                     "oledata.mso",
                     "Firefox Setup Stub 43.0.1.exe",
                 ],
-                "package": "exe",
-                "platform": "windows",
-                "selected": False,
-                "preview": True,
+                "platforms": ("windows",),
+                "selected": True,
                 "password": None,
                 "size": 249336,
                 "error": None,
@@ -398,7 +447,7 @@ def test_extract4_nopreserve():
     assert os.path.exists(filepath)
     assert open(filepath, "rb").read() == b"B"*1024
 
-def test_extract5_relative():
+def test_extract5_relative_no_spf():
     buf = io.BytesIO()
     z = zipfile.ZipFile(buf, "w")
     z.writestr("foobarfilename", "A"*1024)
@@ -408,9 +457,42 @@ def test_extract5_relative():
         b"thisisfilename", b"/../../../rela"
     ))
     dirpath = tempfile.mkdtemp(prefix="sfl")
-    f.extract(dirpath, preserve=True)
-    assert len(os.listdir(dirpath)) == 1
 
+    f.extract(dirpath, preserve=True)
+    assert len(os.listdir(dirpath)) == 2
+
+    filepath = os.path.join(dirpath, "foobarfilename")
+    assert open(filepath, "rb").read() == b"A"*1024
+
+def test_extract5_relative_spf():
+    """
+    This test demonstrates the 7z unpacking using the -spf flag
+
+    This flag enables 7z to enter an unsafe mode, it will try to write
+    files to a relative directory.
+
+    In this test Zipjail will catch the directory_traversal error
+    """
+    buf = io.BytesIO()
+    z = zipfile.ZipFile(buf, "w")
+    z.writestr("foobarfilename", "A"*1024)
+    z.writestr("thisisfilename", "B"*1024)
+    z.close()
+
+    contents = buf.getvalue().replace(
+        b"thisisfilename", b"/../../../rela"
+    )
+    f = File(None, contents, filename=None)
+    filepath = f.temp_path(b".7z")
+    dirpath = tempfile.mkdtemp()
+    u = Zip7File(f)
+    u.name = "7zfile"
+    args = ["-spf"]
+    u.zipjail(
+        filepath, dirpath, "x", "-mmt=off", "-o%s" % dirpath, filepath, *args
+    )
+    assert f.error == "directory_traversal"
+    assert len(os.listdir(dirpath)) == 1
     filepath = os.path.join(dirpath, "foobarfilename")
     assert open(filepath, "rb").read() == b"A"*1024
 
