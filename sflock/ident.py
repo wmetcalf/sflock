@@ -64,6 +64,9 @@ def office_zip(f):
     if f.get_child("ppt/presentation.xml"):
         return "ppt"
 
+    if f.get_child('workbook.bin'):
+        return "xls"
+    
     if not f.get_child("docProps/app.xml"):
         return
 
