@@ -21,6 +21,7 @@ file_extensions = OrderedDict(
         ("doc", (b".doc", b".dot", b".docx", b".dotx", b".docm", b".dotm", b".docb", b".rtf", b".mht", b".mso", b".wbk", b".wiz")),
         ("xls", (b".xls", b".xlt", b".xlm", b".xlsx", b".xltx", b".xlsm", b".xltm", b".xlsb", b".xla", b".xlam", b".xll", b".xlw", b".slk", b".xll", b".csv")),
         ("ppt", (b".ppt", b".ppa", b".pot", b".pps", b".pptx", b".pptm", b".potx", b".potm", b".ppam", b".ppsx", b".ppsm", b".sldx", b".sldm")),
+        ("appx",(b".appx", b".appxbundle", b".msix", b".msixbundle")),
         ("jar", (b".jar",)),
         # ("rar", (b".rar",)),
         ("reg", (b".reg",)),
