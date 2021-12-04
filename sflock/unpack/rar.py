@@ -9,13 +9,14 @@ import tempfile
 
 from sflock.abstracts import Unpacker
 
+
 class RarFile(Unpacker):
     name = "rarfile"
     exe = "/usr/bin/rar"
     exts = b".rar"
     magic = "RAR archive"
 
-    def unpack(self, password=None, duplicates=None):
+    def unpack(self, password: str = None, duplicates=None):
         dirpath = tempfile.mkdtemp()
 
         if self.f.filepath:
@@ -25,10 +26,7 @@ class RarFile(Unpacker):
             filepath = self.f.temp_path()
             temporary = True
 
-        ret = self.zipjail(
-            filepath, dirpath, "x", "-mt1", b"-p%s" % (password or b"-"),
-            filepath, dirpath
-        )
+        ret = self.zipjail(filepath, dirpath, "x", "-mt1", "-p%s" % (password or "-"), filepath, dirpath)
         if not ret:
             return []
 

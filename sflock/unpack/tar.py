@@ -6,8 +6,6 @@
 import bz2
 import gzip
 import os
-import shutil
-import six
 import tarfile
 import tempfile
 
@@ -45,16 +43,11 @@ class TarFile(Unpacker):
                 self.f.error = "files_too_large"
                 return []
 
-            relapath = entry.path
-            if six.PY3:
-                relapath = relapath.encode()
-
-            entries.append(File(
-                relapath=relapath,
-                contents=archive.extractfile(entry).read()
-            ))
+            relapath = entry.path.encode()
+            entries.append(File(relapath=relapath, contents=archive.extractfile(entry).read()))
 
         return self.process(entries, duplicates)
+
 
 class TargzFile(TarFile, Unpacker):
     name = "targzfile"
@@ -89,7 +82,6 @@ class TargzFile(TarFile, Unpacker):
         os.unlink(filepath)
         return ret
 
-
     def unpack(self, password=None, duplicates=None):
         dirpath = tempfile.mkdtemp()
 
@@ -100,18 +92,29 @@ class TargzFile(TarFile, Unpacker):
             filepath = self.f.filepath
             temporary = False
 
-        outfile = open(os.path.join(dirpath, "output"), 'wb')
-        with gzip.open(filepath) as infile:
-            try:
-                while True:
-                    chunk = infile.read(0x10000)
-                    if not chunk:
-                        break
-                    outfile.write(chunk)
-            except gzip.zlib.error:
-                pass
+        try:
+            with tarfile.open(filepath, self.mode) as _tar:
+                for member in _tar:
+                    if member.isdir():
+                        continue
 
-        outfile.close()
+                    fname = member.name
+                    if "/" in fname:
+                        fname = fname.rsplit("/", 1)[1]
+                    _tar.makefile(member, os.path.join(dirpath, fname))
+        except tarfile.ReadError:
+            outfile = open(os.path.join(dirpath, "output"), "wb")
+            with gzip.open(filepath) as infile:
+                try:
+                    while True:
+                        chunk = infile.read(0x10000)
+                        if not chunk:
+                            break
+                        outfile.write(chunk)
+                except gzip.zlib.error:
+                    pass
+
+            outfile.close()
 
         if temporary:
             os.unlink(filepath)
@@ -181,4 +184,3 @@ class Tarbz2File(TarFile, Unpacker):
             return []
 
         return self.process_directory(dirpath, duplicates)
-

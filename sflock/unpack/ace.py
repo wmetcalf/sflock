@@ -12,6 +12,7 @@ import tempfile
 
 from sflock.abstracts import Unpacker
 
+
 class AceFile(Unpacker):
     name = "acefile"
     exe = "/usr/bin/unace"
@@ -22,18 +23,16 @@ class AceFile(Unpacker):
         dirpath = tempfile.mkdtemp()
         original_path = self.f.filepath
         if self.f.filepath:
-            if not self.f.filepath.endswith(".ace"):
-                os.rename(self.f.filepath, self.f.filepath+".ace")
-                self.f.filepath = self.f.filepath+".ace"
+            if not self.f.filepath.endswith(b".ace"):
+                os.rename(self.f.filepath, self.f.filepath + b".ace")
+                self.f.filepath = self.f.filepath + b".ace"
             filepath = os.path.abspath(self.f.filepath)
             temporary = False
         else:
-            filepath = self.f.temp_path(".ace")
+            filepath = self.f.temp_path(b".ace")
             temporary = True
 
-        ret = self.zipjail(
-            filepath, dirpath, "x", filepath, dirpath + os.sep
-        )
+        ret = self.zipjail(filepath, dirpath, "x", filepath, dirpath + os.sep)
         if not ret:
             return []
 

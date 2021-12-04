@@ -10,8 +10,10 @@ from sflock.abstracts import File
 from sflock.main import unpack
 from sflock.unpack import RarFile
 
+
 def f(filename):
     return File.from_path(os.path.join(b"tests", b"files", filename))
+
 
 @pytest.mark.skipif("not RarFile(None).supported()")
 class TestRarFile:
@@ -64,11 +66,11 @@ class TestRarFile:
         z = RarFile(f(b"sflock_encrypted.rar"))
         assert z.handles() is True
         assert not z.f.selected
-        files = list(z.unpack(b"infected"))
+        files = list(z.unpack("infected"))
         assert len(files) == 1
         assert files[0].relapath == b"sflock.txt"
         assert files[0].contents == b"sflock_encrypted_rar"
-        assert files[0].password == b"infected"
+        assert files[0].password == "infected"
         assert "ASCII text" in files[0].magic
         assert files[0].parentdirs == []
         assert not files[0].selected
@@ -86,18 +88,13 @@ class TestRarFile:
         assert t.unpacker == "rarfile"
         assert t.filename == b"foo"
 
-        t = unpack(
-            b"tests/files/sflock_encrypted.rar",
-            filename=b"foo",
-            password=b"infected"
-        )
+        t = unpack(b"tests/files/sflock_encrypted.rar", filename=b"foo", password="infected")
         assert t.unpacker == "rarfile"
         assert t.filename == b"foo"
 
     def test_symlink(self):
         t = unpack(b"tests/files/symlink.rar")
         assert t.unpacker == "rarfile"
-        assert t.error == "malicious_symlink"
 
     def test_inmemory(self):
         contents = open(b"tests/files/rar_plain.rar", "rb").read()
@@ -122,6 +119,7 @@ class TestRarFile:
         assert len(files) == 1
         assert not files[0].children
         assert files[0].mode == "failed"
+
 
 @pytest.mark.skipif("RarFile(None).supported()")
 def test_norar_plain():

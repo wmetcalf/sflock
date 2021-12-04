@@ -5,16 +5,17 @@
 import email
 import email.header
 import re
-import six
 
 from sflock.abstracts import Unpacker, File
+
 
 class EmlFile(Unpacker):
     name = "emlfile"
     exts = b".eml"
 
     whitelisted_content_type = [
-        "text/plain", "text/html",
+        "text/plain",
+        "text/html",
     ]
 
     def supported(self):
@@ -37,17 +38,12 @@ class EmlFile(Unpacker):
     def real_unpack(self, password, duplicates):
         entries = []
 
-        if six.PY3:
-            e = email.message_from_string(self.f.contents.decode("latin-1"))
-        else:
-            e = email.message_from_string(self.f.contents)
-
+        e = email.message_from_string(self.f.contents.decode("latin-1"))
         for part in e.walk():
             if part.is_multipart():
                 continue
 
-            if not part.get_filename() and \
-                    part.get_content_type() in self.whitelisted_content_type:
+            if not part.get_filename() and part.get_content_type() in self.whitelisted_content_type:
                 continue
 
             payload = part.get_payload(decode=True)
@@ -55,20 +51,10 @@ class EmlFile(Unpacker):
                 continue
 
             filename = part.get_filename()
-
-            if six.PY2 and filename:
-                filename = unicode(email.header.make_header(
-                    email.header.decode_header(filename)
-                )).encode('utf-8')
-            if six.PY3 and filename:
-                filename = email.header.make_header(
-                    email.header.decode_header(filename)
-                )
+            if filename:
+                filename = email.header.make_header(email.header.decode_header(filename))
                 filename = str(filename).encode()
-
-            entries.append(File(
-                relapath=filename or b"att1", contents=payload
-            ))
+            entries.append(File(relapath=filename or b"att1", contents=payload))
 
         return entries
 
@@ -78,9 +64,8 @@ class EmlFile(Unpacker):
         def re_compile_our(pattern):
             return re_compile_orig(pattern.replace("?P<end>--", "?P<end>--+"))
 
-        if six.PY2:
-            re.compile = re_compile_our
-
+        # if six.PY2:
+        re.compile = re_compile_our
         try:
             entries = self.real_unpack(password, duplicates)
         finally:

@@ -3,17 +3,18 @@
 # See the file 'docs/LICENSE.txt' for copying permission.
 
 import pytest
-import six
 
 from sflock.exception import IncorrectUsageException
 from sflock.main import supported, unpack
 from sflock.unpack import AceFile, CabFile, RarFile, Zip7File
 
+
 def test_supported():
     assert supported()
 
+
 def test_count_supported():
-    count = 9
+    count = 15
 
     if AceFile(None).supported():
         count += 1
@@ -25,13 +26,12 @@ def test_count_supported():
         count += 1
 
     if Zip7File(None).supported():
-        count += 5
+        count += 7
 
     assert count == len(supported())
 
+
 def test_unpack_py3():
-    if six.PY2:
-        return
 
     with pytest.raises(IncorrectUsageException):
         unpack(filepath="filepath")
@@ -39,8 +39,8 @@ def test_unpack_py3():
     with pytest.raises(IncorrectUsageException):
         unpack(contents="contents")
 
-    with pytest.raises(IncorrectUsageException):
-        unpack(password="password")
+    # with pytest.raises(IncorrectUsageException):
+    #    unpack(password="password")
 
     with pytest.raises(IncorrectUsageException):
         unpack(filename="filename")
