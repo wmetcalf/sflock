@@ -1,12 +1,22 @@
 # Copyright (C) 2017-2018 Jurriaan Bremer.
 # This file is part of SFlock - http://www.sflock.org/.
 # See the file 'docs/LICENSE.txt' for copying permission.
-
+import os
 import re
 from collections import OrderedDict
 
 import pefile
 from sflock.aux.decode_vbe_jse import DecodeVBEJSE
+
+try:
+    import yara
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    shellcode_rules = yara.compile(filepath=os.path.join(cur_dir, "data", "yara", "shellcodes.yar"))
+    archives_rules = yara.compile(filepath=os.path.join(cur_dir, "data", "yara", "archives.yar"))
+    HAVE_YARA = True
+except ImportError:
+    HAVE_YARA = False
+
 
 try:
     from unicorn import Uc, UC_MODE_32, UC_MODE_64, UC_ARCH_X86, UC_HOOK_CODE, unicorn
@@ -15,8 +25,13 @@ try:
 except ImportError:
     HAVE_UNICORN = False
 
+shellcode_code_base = 0x100000
+shellcode_threshold = 0x100
+shellcode_limit = 0x100000
+
 file_extensions = OrderedDict(
     [
+        ("access", (b".accdr",)),
         ("msi", (b".msi", b".msp", b".appx")),
         ("pub", (b".pub",)),
         ("doc", (b".doc", b".dot", b".docx", b".dotx", b".docm", b".dotm", b".docb", b".rtf", b".mht", b".mso", b".wbk", b".wiz")),
@@ -29,7 +44,7 @@ file_extensions = OrderedDict(
         ("swf", (b".swf", b".fws")),
         ("python", (b".py", b".pyc", b".pyw")),
         ("ps1", (b".ps1",)),
-        # ("msg", (b".msg",)),
+        # ("msg", (b".msg",, b".rpmsg")),
         # ("eml", (b".eml", b".ics")),
         ("js", (b".js", b".jse")),
         ("ie", (b".html", b".url")), # b".htm",
@@ -103,14 +118,15 @@ magics = OrderedDict(
         ("MS Windows HtmlHelp Data", "chm"),
         ("Hangul (Korean) Word Processor File", "hwp"),
         ("XSL stylesheet", "xslt"),
-        ("RFC 822 mail", "eml"),
-        ("old news", "eml"),
-        ("mail forwarding", "eml"),
-        ("smtp mail", "eml"),
-        ("news", "eml"),
-        ("news or mail", "eml"),
-        ("saved news", "eml"),
-        ("MIME entity", "eml"),
+        # ("RFC 822 mail", "eml"),
+        # ("old news", "eml"),
+        # ("mail forwarding", "eml"),
+        # ("smtp mail", "eml"),
+        # ("news", "eml"),
+        # ("news or mail", "eml"),
+        # ("saved news", "eml"),
+        # ("MIME entity", "eml"),
+        # ("rpmsg Restricted Permission Message", "msg"),
         ("Java Jar archive", "jar"),
         ("META-INF/MANIFEST.MF", "jar"),
         ("Java Jar file data (zip)", "jar"),
@@ -119,12 +135,13 @@ magics = OrderedDict(
     ]
 )
 
-shellcode_code_base = 0x100000
-shellcode_threshold = 0x100
-shellcode_limit = 0x100000
-
-
 def detect_shellcode(f):
+    """
+    if HAVE_YARA:
+        matches = shellcode_rules.match(data=f.contents)
+        if matches:
+            return "Shellcode"
+    """
     global shellcode_count32, shellcode_count64, shellcode_last_address
     shellcode_count32 = 0
     shellcode_count64 = 0
@@ -448,7 +465,13 @@ def vbe_jse(f):
             return "vbejse"
 
 
-def identify(f):
+def udf(f):
+    if HAVE_YARA:
+        matches = archives_rules.match(data=f.contents)
+        if "archive_udf" in [rule.rule for rule in matches]:
+            return "udf"
+
+def identify(f, check_shellcode: bool = False):
     if not f.stream.read(0x1000):
         return
 
@@ -473,10 +496,12 @@ def identify(f):
     if f.mime in mimes:
         return mimes[f.mime]
 
-    return detect_shellcode(f)
+    if check_shellcode:
+        return detect_shellcode(f)
 
 
 identifiers = [
+    udf,
     dmg,
     office_zip,
     office_ole,
