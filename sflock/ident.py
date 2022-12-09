@@ -62,7 +62,8 @@ file_extensions = OrderedDict(
         ("msbuild", (b".csproj", b".vbproj", b".vcxproj", b".dbproj", b".fsproj")),
         ("zip", (b".zip",)),
         ("cpl", (b".cpl",)),
-        ("ichitaro", (b".jtd", b".jtdc", b".jttc", b".jtt"))
+        ("ichitaro", (b".jtd", b".jtdc", b".jttc", b".jtt")),
+        ("archive",(b".iso",b".img")),
     ]
 )
 
@@ -103,6 +104,7 @@ magics = OrderedDict(
         ("Microsoft OOXML", "doc"),
         # ("MIME entity", "doc"),
         ("Microsoft Disk Image", "vhd"),
+        ("ISO 9660", "iso"),
         ("PDF document", "pdf"),
         ("Windows imaging (WIM) image", "wim"),
         ("Nullsoft Installer", "nsis"),

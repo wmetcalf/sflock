@@ -64,6 +64,9 @@ suffix_dic = {
     b".mso": "doc",
     b".pdf": "pdf",
     b".pub": "pub",
+    b".iso": "archive",
+    b".img": "archive",
+    b".vhd": "archive",
 }
 eml_magics = (
     "RFC 822 mail",
@@ -80,6 +83,10 @@ jar_magics = (
     "META-INF/MANIFEST.MF",
     "Java Jar file data (zip)",
     "Java archive data (JAR)",
+)
+archive_magics = (
+    "ISO 9660",
+    "Microsoft Disk Image",
 )
 
   
@@ -105,9 +112,13 @@ def package(f):
     
     if is_magic(f, jar_magics):
         return "jar"
-    
+  
+    if is_magic(f, archive_magics):
+        return "archive"
+  
     if "HTML" in f.magic:
-        return "ie"
+        if filename.endswith(b".wsf") or filename.endswith(b".wsc"):
+            return "wsf"
     
     if "Python script" in f.magic:
         return "python"
@@ -123,7 +134,7 @@ def package(f):
 
     if "7-zip archive" in f.magic:
         return "7z"
-
+   
     # TODO Get rid of this logic and replace it by actually inspecting
     # the contents of the .zip files (in case of Office 2007+).
     if "Rich Text Format" in f.magic or "Microsoft Word" in f.magic or "Microsoft Office Word" in f.magic:
