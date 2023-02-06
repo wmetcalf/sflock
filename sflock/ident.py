@@ -64,6 +64,13 @@ file_extensions = OrderedDict(
         ("cpl", (b".cpl",)),
         ("ichitaro", (b".jtd", b".jtdc", b".jttc", b".jtt")),
         ("archive",(b".iso",b".img")),
+        ("one", (b".one", b".onetoc2"))
+    ]
+)
+
+trusted_archive_mimes = OrderedDict(
+    [
+        ("application/x-iso9660-image", "iso"),
     ]
 )
 
@@ -82,6 +89,12 @@ mimes = OrderedDict(
         ("application/x-dosexec", "exe"),
         ("application/vnd.ms-cab-compressed", "cab"),
         ("application/pdf", "pdf"),
+    ]
+)
+
+trusted_archive_magics = OrderedDict(
+    [
+        ("ISO 9660", "iso"),
     ]
 )
 
@@ -246,6 +259,9 @@ def hta(f):
     if found >= 10:
         return "hta"
 
+def office_one(f):
+    if f.contents.startswith(b"\xE4\x52\x5C\x7B\x8C\xD8\xA7\x4D\xAE\xB1\x53\x78\xD0\x29\x96\xD3"):
+        return "one"
 
 def office_webarchive(f):
     if f.contents.startswith(b"MZ"):
@@ -481,6 +497,15 @@ def identify(f, check_shellcode: bool = False):
         for package, extensions in file_extensions.items():
             if f.filename.endswith(extensions):
                 return package
+
+    # Trusted mimes and magics should be applied before identifiers which could run on files within archives
+    if f.mime in trusted_archive_mimes:
+        return trusted_archive_mimes[f.mime]
+
+    for magic_types in trusted_archive_magics:
+        if f.magic.startswith(magic_types):
+            return trusted_archive_magics[magic_types]
+
     for identifier in identifiers:
         package = identifier(f)
         if package:
@@ -507,6 +532,7 @@ identifiers = [
     dmg,
     office_zip,
     office_ole,
+    office_one,
     office_webarchive,
     office_activemime,
     hta,
