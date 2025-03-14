@@ -67,6 +67,7 @@ suffix_dic = {
     b".iso": "archive",
     b".img": "archive",
     b".vhd": "archive",
+    b".ppkg": "ppkg",
 }
 eml_magics = (
     "RFC 822 mail",
@@ -89,7 +90,7 @@ archive_magics = (
     "Microsoft Disk Image",
 )
 
-  
+
 def package(f):
     """Guesses the package based on the filename and/or contents."""
     filename = f.filename.lower() if f.filename else b""
@@ -106,35 +107,38 @@ def package(f):
 
     if "PDF" in f.magic:
         return "pdf"
-    
+
     if is_magic(f, eml_magics):
         return "eml"
-    
+
     if is_magic(f, jar_magics):
         return "jar"
-  
+
     if is_magic(f, archive_magics):
         return "archive"
-  
+
     if "HTML" in f.magic:
         if filename.endswith(b".wsf") or filename.endswith(b".wsc"):
             return "wsf"
-    
+
     if "Python script" in f.magic:
         return "python"
 
     if "vbs" in f.magic:
         return "vbs"
-    
+
     if "Zip archive" in f.magic:
         return "zip"
-    
+
     if "RAR archive" in f.magic:
         return "rar"
 
     if "7-zip archive" in f.magic:
         return "7z"
-   
+
+    if "Windows imaging (WIM) image" in f.magic:
+        return "ppkg"
+
     # TODO Get rid of this logic and replace it by actually inspecting
     # the contents of the .zip files (in case of Office 2007+).
     if "Rich Text Format" in f.magic or "Microsoft Word" in f.magic or "Microsoft Office Word" in f.magic:
@@ -151,7 +155,7 @@ def package(f):
 
     if "MS Windows shortcut" in f.magic:
         return "generic"
-    
+
     package = use_suffix_for_package(filename, suffix_dic)
     if package:
         return package
@@ -173,11 +177,11 @@ def is_bash_script(f):
 def is_elf_executable(f):
     return f.magic.startswith("ELF")
 
+
 def is_magic(f, type_magics):
     for magic in type_magics:
         if magic in f.magic:
             return True
-
 
 
 platforms = {

@@ -10,6 +10,7 @@ from sflock.aux.decode_vbe_jse import DecodeVBEJSE
 
 try:
     import yara
+
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     shellcode_rules = yara.compile(filepath=os.path.join(cur_dir, "data", "yara", "shellcodes.yar"))
     archives_rules = yara.compile(filepath=os.path.join(cur_dir, "data", "yara", "archives.yar"))
@@ -21,6 +22,7 @@ except ImportError:
 try:
     from unicorn import Uc, UC_MODE_32, UC_MODE_64, UC_ARCH_X86, UC_HOOK_CODE, unicorn
     from unicorn.x86_const import UC_X86_REG_ESP
+
     HAVE_UNICORN = True
 except ImportError:
     HAVE_UNICORN = False
@@ -35,9 +37,28 @@ file_extensions = OrderedDict(
         ("msi", (b".msi", b".msp", b".appx")),
         ("pub", (b".pub",)),
         ("doc", (b".doc", b".dot", b".docx", b".dotx", b".docm", b".dotm", b".docb", b".rtf", b".mht", b".mso", b".wbk", b".wiz")),
-        ("xls", (b".xls", b".xlt", b".xlm", b".xlsx", b".xltx", b".xlsm", b".xltm", b".xlsb", b".xla", b".xlam", b".xll", b".xlw", b".slk", b".xll", b".csv")),
+        (
+            "xls",
+            (
+                b".xls",
+                b".xlt",
+                b".xlm",
+                b".xlsx",
+                b".xltx",
+                b".xlsm",
+                b".xltm",
+                b".xlsb",
+                b".xla",
+                b".xlam",
+                b".xll",
+                b".xlw",
+                b".slk",
+                b".xll",
+                b".csv",
+            ),
+        ),
         ("ppt", (b".ppt", b".ppa", b".pot", b".pps", b".pptx", b".pptm", b".potx", b".potm", b".ppam", b".ppsx", b".ppsm", b".sldx", b".sldm")),
-        ("appx",(b".appx", b".appxbundle", b".msix", b".msixbundle")),
+        ("appx", (b".appx", b".appxbundle", b".msix", b".msixbundle")),
         ("jar", (b".jar",)),
         # ("rar", (b".rar",)),
         ("reg", (b".reg",)),
@@ -47,7 +68,7 @@ file_extensions = OrderedDict(
         # ("msg", (b".msg",, b".rpmsg")),
         # ("eml", (b".eml", b".ics")),
         ("js", (b".js", b".jse")),
-        ("ie", (b".html", b".url")), # b".htm",
+        ("ie", (b".html", b".url")),  # b".htm",
         ("xps", (b".xps",)),
         ("hta", (b".hta",)),
         ("mht", (b".mht",)),
@@ -63,8 +84,9 @@ file_extensions = OrderedDict(
         ("zip", (b".zip",)),
         ("cpl", (b".cpl",)),
         ("ichitaro", (b".jtd", b".jtdc", b".jttc", b".jtt")),
-        ("archive",(b".iso",b".img")),
-        ("one", (b".one", b".onetoc2"))
+        ("archive", (b".iso", b".img")),
+        ("one", (b".one", b".onetoc2")),
+        ("ppkg", (b".ppkg")),
     ]
 )
 
@@ -107,7 +129,7 @@ magics = OrderedDict(
         ("MS-DOS executable PE32 executable (DLL)", "dll"),
         ("PE32 executable", "exe"),
         ("PE32+ executable", "exe"),
-        ('MS-DOS executable, MZ for MS-DOS', "exe"),
+        ("MS-DOS executable, MZ for MS-DOS", "exe"),
         ("Microsoft PowerPoint", "ppt"),
         ("Microsoft Office Excel", "xls"),
         ("Microsoft Excel", "xls"),
@@ -146,9 +168,11 @@ magics = OrderedDict(
         ("META-INF/MANIFEST.MF", "jar"),
         ("Java Jar file data (zip)", "jar"),
         ("Java archive data (JAR)", "jar"),
+        ("Windows imaging (WIM) image", "ppkg"),
         # ("HTML", "html"),
     ]
 )
+
 
 def detect_shellcode(f):
     """
@@ -174,6 +198,7 @@ def detect_shellcode(f):
         return "Shellcode"
     return False
 
+
 def hook_instr(uc, address, size, mode):
     global shellcode_count32, shellcode_count64, shellcode_last_address
     if mode == UC_MODE_32:
@@ -182,33 +207,38 @@ def hook_instr(uc, address, size, mode):
         shellcode_count64 += 1
     shellcode_last_address = address
 
+
 def emulate(data, mode):
     try:
         stack = 0x90000
         uc = Uc(UC_ARCH_X86, mode)
-        uc.mem_map(stack, 0x1000*10)
+        uc.mem_map(stack, 0x1000 * 10)
         uc.mem_map(shellcode_code_base, 0x100000)
         uc.mem_write(shellcode_code_base, data)
-        uc.reg_write(UC_X86_REG_ESP, stack+0x1000)
+        uc.reg_write(UC_X86_REG_ESP, stack + 0x1000)
         uc.hook_add(UC_HOOK_CODE, hook_instr, user_data=mode)
-        uc.emu_start(shellcode_code_base, shellcode_code_base+len(data), 0, shellcode_limit)
+        uc.emu_start(shellcode_code_base, shellcode_code_base + len(data), 0, shellcode_limit)
     except unicorn.UcError:
         pass
+
 
 def inp(f):
     if b"InPage Arabic Document" in f.contents:
         return "inp"
 
+
 def mso(f):
     if b"mso-application" in f.contents and b"Word.Document" in f.contents:
         return "doc"
 
+
 def sct(f):
     if f.filename and f.filename.endswith(b".sct"):
-        if re.search(br"(?is)<\?XML.*?<scriptlet.*?<registration", f.contents):
+        if re.search(rb"(?is)<\?XML.*?<scriptlet.*?<registration", f.contents):
             return "sct"
         else:
             return "hta"
+
 
 def xxe(f):
     if f.contents.startswith(b"MZ"):
@@ -259,9 +289,11 @@ def hta(f):
     if found >= 10:
         return "hta"
 
+
 def office_one(f):
     if f.contents.startswith(b"\xE4\x52\x5C\x7B\x8C\xD8\xA7\x4D\xAE\xB1\x53\x78\xD0\x29\x96\xD3"):
         return "one"
+
 
 def office_webarchive(f):
     if f.contents.startswith(b"MZ"):
@@ -488,6 +520,7 @@ def udf(f):
         matches = archives_rules.match(data=f.contents)
         if "archive_udf" in [rule.rule for rule in matches]:
             return "udf"
+
 
 def identify(f, check_shellcode: bool = False):
     if not f.stream.read(0x1000):
