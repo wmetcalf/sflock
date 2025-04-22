@@ -81,10 +81,10 @@ file_extensions = OrderedDict(
         ("pdf", (b".pdf",)),
         ("vbs", (b".vbs", b".vbe")),
         ("msbuild", (b".csproj", b".vbproj", b".vcxproj", b".dbproj", b".fsproj")),
-        ("zip", (b".zip",)),
+        # ("zip", (b".zip",)),
         ("cpl", (b".cpl",)),
         ("ichitaro", (b".jtd", b".jtdc", b".jttc", b".jtt")),
-        ("archive", (b".iso", b".img")),
+        ("archive", (b".iso", b".img", b".zip", b".rar")),
         ("one", (b".one", b".onetoc2")),
         ("ppkg", (b".ppkg")),
     ]
@@ -98,15 +98,15 @@ trusted_archive_mimes = OrderedDict(
 
 mimes = OrderedDict(
     [
-        ("application/x-lzh-compressed", "lzh"),
-        ("application/x-iso9660-image", "iso"),
-        ("application/zip", "zip"),
-        ("application/gzip", "gzip"),
-        ("text/x-python", "py"),
-        ("application/x-rar", "rar"),
-        ("application/x-7z-compressed", "7z"),
-        ("application/x-bzip2", "bzip2"),
-        ("application/x-tar", "tar"),
+        ("application/x-lzh-compressed", "archive"),
+        ("application/x-iso9660-image", "archive"),
+        ("application/zip", "archive"),
+        ("application/gzip", "archive"),
+        ("text/x-python", "python"),
+        ("application/x-rar", "archive"),
+        ("application/x-7z-compressed", "archive"),
+        ("application/x-bzip2", "archive"),
+        ("application/x-tar", "archive"),
         ("application/java-archive", "jar"),
         ("application/x-dosexec", "exe"),
         ("application/vnd.ms-cab-compressed", "cab"),
@@ -116,7 +116,7 @@ mimes = OrderedDict(
 
 trusted_archive_magics = OrderedDict(
     [
-        ("ISO 9660", "iso"),
+        ("ISO 9660", "archive"),
     ]
 )
 
@@ -138,8 +138,8 @@ magics = OrderedDict(
         ("Microsoft Word", "doc"),
         ("Microsoft OOXML", "doc"),
         # ("MIME entity", "doc"),
-        ("Microsoft Disk Image", "vhd"),
-        ("ISO 9660", "iso"),
+        ("Microsoft Disk Image", "archive"),
+        ("ISO 9660", "archive"),
         ("PDF document", "pdf"),
         ("Windows imaging (WIM) image", "wim"),
         ("Nullsoft Installer", "nsis"),
